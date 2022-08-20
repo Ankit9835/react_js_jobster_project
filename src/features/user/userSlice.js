@@ -6,6 +6,7 @@ import {
   getLocalStorage,
   removeLocalStorage,
 } from '../../utils/localStorage'
+import { registerUserThunk } from './userThunk'
 
 const initialState = {
   isLoading: false,
@@ -16,14 +17,7 @@ const initialState = {
 export const registerUser = createAsyncThunk(
   'user/registerUser',
   async (user, thunkAPI) => {
-    try {
-      const resp = await customeFetch.post('/auth/register', user)
-      return resp.data
-    } catch (err) {
-      //toast.error(err.response.data.msg)
-      return thunkAPI.rejectWithValue(err.response.data.msg)
-      //console.log(err.response)
-    }
+    return registerUserThunk('/auth/register', user, thunkAPI)
   }
 )
 
@@ -35,6 +29,27 @@ export const loginUser = createAsyncThunk(
       return resp.data
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response.data.msg)
+    }
+  }
+)
+
+export const updateUser = createAsyncThunk(
+  'user/updateUser',
+  async (user, thunkAPI) => {
+    try {
+      const resp = await customeFetch.patch('/auth/updateUser', user, {
+        headers: {
+          authorization: `Bearer ${thunkAPI.getState().user.user.token}`,
+        },
+      })
+      return resp.data
+    } catch (error) {
+      console.log(error)
+      if (error.response.status === 401) {
+        thunkAPI.dispatch(logoutUser())
+        thunkAPI.rejectWithValue(`Unauthorized logging out`)
+      }
+      thunkAPI.rejectWithValue(error.response.data.msg)
     }
   }
 )
@@ -78,6 +93,20 @@ const userSlice = createSlice({
       toast.success(`Welcome Back ${user.name}`)
     },
     [loginUser.rejected]: (state, { payload }) => {
+      state.isLoading = false
+      toast.error(payload)
+    },
+    [updateUser.pending]: (state) => {
+      state.isLoading = true
+    },
+    [updateUser.fulfilled]: (state, { payload }) => {
+      const { user } = payload
+      state.isLoading = false
+      state.user = user
+      addLocalStorage(user)
+      toast.success('User updated')
+    },
+    [updateUser.rejected]: (state, { payload }) => {
       state.isLoading = false
       toast.error(payload)
     },

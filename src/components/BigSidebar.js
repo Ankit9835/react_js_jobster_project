@@ -4,13 +4,13 @@ import Wrapper from '../assets/wrappers/BigSidebar'
 import { useSelector } from 'react-redux'
 
 const BigSidebar = () => {
-  const { isSidebarOpen } = useSelector((store) => store.user)
+  const { isSideBarOpen } = useSelector((store) => store.user)
 
   return (
     <Wrapper>
       <div
         className={
-          isSidebarOpen
+          isSideBarOpen
             ? 'sidebar-container '
             : 'sidebar-container show-sidebar'
         }
